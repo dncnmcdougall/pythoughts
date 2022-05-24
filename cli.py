@@ -83,28 +83,40 @@ class Read:
             required=True,
             action="store",
             choices=["name", "tag"],
-            help="Display the toughts either as a list (--by=name) or grouped by tags (--by=tag).",
+            help=(
+                "Display the toughts either as a list (--by=name) or grouped by tags"
+                " (--by=tag)."
+            ),
         )
         parser.add_argument(
             "-t",
             "--tags",
             nargs="+",
             action="store",
-            help="Display the thoughts with the given tags. If no tag is given, display all the thoughts.",
+            help=(
+                "Display the thoughts with the given tags. If no tag is given, display"
+                " all the thoughts."
+            ),
         )
         parser.add_argument(
             "-n",
             "--names",
             nargs="+",
             action="store",
-            help="Display thoughts with the given names. If no name is given, display all the thoughts.",
+            help=(
+                "Display thoughts with the given names. If no name is given, display"
+                " all the thoughts."
+            ),
         )
         parser.add_argument(
             "-l",
             "--links",
             nargs="+",
             action="store",
-            help="Display the thoughts which link to the given links. If no link is given, display all the thoughts.",
+            help=(
+                "Display the thoughts which link to the given links. If no link is"
+                " given, display all the thoughts."
+            ),
         )
         parser.add_argument(
             "-d",
@@ -160,7 +172,9 @@ class Write:
             "--link",
             nargs=1,
             action="append",
-            help="Adds an outward link to this thought. Ignored is --create is presnet.",
+            help=(
+                "Adds an outward link to this thought. Ignored is --create is presnet."
+            ),
         )
         parser.add_argument(
             "-d",

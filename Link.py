@@ -8,4 +8,11 @@ class Link:
     """Represents a link between Thoughts."""
 
     source: Name
-    dest: Name
+    target: str
+
+    @staticmethod
+    def fromStr(source: str, target:str) -> "Link":
+        return Link(
+                source=Name.fromStr(source),
+                target=target
+                )

@@ -9,10 +9,10 @@ class ThoughtTests(unittest.TestCase):
     def equalDict(self, thought: Thought, dict: Dict[str, List[str]]):
         self.assertEqual(str(thought.title), dict["title"])
         self.assertEqual([t.title for t in thought.tags], dict["tags"])
-        self.assertEqual([str(l.dest) for l in thought.links], dict["links"])
+        self.assertEqual([str(l.target) for l in thought.links], dict["links"])
 
     def test_parse(self):
-        """ This method takes in the lines of a file and returns a thought.
+        """This method takes in the lines of a file and returns a thought.
         The format of the content is irrelevant, with a few small boundaries:
 
         The first heading is the title of the thought.
@@ -27,7 +27,7 @@ class ThoughtTests(unittest.TestCase):
         parsed for tags and links, but is not included in content.
 
         Other toplevel headings are ignored. The content of those sections is
-        not parsed for tags and links, and the content is not stored. """
+        not parsed for tags and links, and the content is not stored."""
 
         heading_content = ["# heading", "content 1", "content 2", ""]
 
@@ -78,14 +78,14 @@ class ThoughtTests(unittest.TestCase):
         )
 
     def test_parse_heading(self):
-        """ The first heading in the file is used as the title.
+        """The first heading in the file is used as the title.
         A heading line is: /#\s\(.*\)$/
         And the heading is: /\1/
 
         Note that this means that you can have a thought entitles "tags".
         It will then have two "tags" headings in it.
         """
-            
+
         heading_content = ["# heading", "content 1", "content 2", ""]
 
         heading_content_2 = ["# heading 2", "content 1", "content 2", ""]
@@ -95,7 +95,7 @@ class ThoughtTests(unittest.TestCase):
         result = Thought.parse([], "test")
         self.equalDict(
             result,
-            {"title": '', "content": [], "tags": [], "sources": [], "links": []},
+            {"title": "", "content": [], "tags": [], "sources": [], "links": []},
         )
 
         result = Thought.parse([heading_content[0]], "test")
@@ -141,14 +141,14 @@ class ThoughtTests(unittest.TestCase):
         )
 
     def test_parse_tags(self):
-        """ There are two ways to specify tags.
+        """There are two ways to specify tags.
         Eaither inline on in the tags section of the file.
 
         Inline links are specified with /[[\(.\{-}\)]]/ which links to /\1/.
 
         The tags section of the file starts tith the "tags" heading. Every line
         in that section is split on ",". Every non-empty item in the resulting
-        lists is considered a tag. Thus there can be tags with spaces. 
+        lists is considered a tag. Thus there can be tags with spaces.
         """
 
         heading_content = ["# heading", "content 1", "content 2", ""]
@@ -236,7 +236,7 @@ class ThoughtTests(unittest.TestCase):
         )
 
     def test_parse_links(self):
-        """ 
+        """
         Links are specified inline with /[[\(.\{-}\)]]/ which links to /\1/.
         """
 
@@ -272,7 +272,7 @@ class ThoughtTests(unittest.TestCase):
         )
 
     def test_parse_sources(self):
-        """ Sources is a special section that is parsed and included.
+        """Sources is a special section that is parsed and included.
         It is not very special in that it is treated the same as the main contnet.
         It is special in that it is not ignored.
         """
@@ -343,7 +343,7 @@ class ThoughtTests(unittest.TestCase):
         )
 
     def test_parse_other_headings(self):
-        """ Apart from the first heading, tags and sources, all other headings and their content are ignored.
+        """Apart from the first heading, tags and sources, all other headings and their content are ignored.
         It is not very special in that it is treated the same as the main contnet.
         It is special in that it is not ignored.
         """
@@ -364,9 +364,8 @@ class ThoughtTests(unittest.TestCase):
             {
                 "title": "heading",
                 "content": ["content #1", "content [[2]]"],
-                "tags": ["1","2"],
+                "tags": ["1", "2"],
                 "sources": ["sources #2", "sources [[cats]]", ""],
-                "links": ["2","cats"],
+                "links": ["2", "cats"],
             },
         )
-
