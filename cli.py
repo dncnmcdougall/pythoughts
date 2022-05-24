@@ -47,7 +47,7 @@ class Create:
             "create", help=Create.__doc__, description=Create.__doc__
         )
         parser.add_argument(
-            "name", nargs=1, action="store", help="The name of the thought to update."
+            "name", nargs=1, action="store", help="The name of the thought to create."
         )
         parser.add_argument(
             "-b",
