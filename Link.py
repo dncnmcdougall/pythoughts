@@ -11,8 +11,5 @@ class Link:
     target: str
 
     @staticmethod
-    def fromStr(source: str, target:str) -> "Link":
-        return Link(
-                source=Name.fromStr(source),
-                target=target
-                )
+    def fromStr(source: str, target: str) -> "Link":
+        return Link(source=Name.fromStr(source), target=target)

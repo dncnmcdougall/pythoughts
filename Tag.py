@@ -10,7 +10,7 @@ class Tag:
 
     @staticmethod
     def fromStr(tag: str) -> "Tag":
-        return Tag(id=-1,title=tag)
+        return Tag(id=-1, title=tag)
 
     def __hash__(self):
         return self.title.__hash__()
