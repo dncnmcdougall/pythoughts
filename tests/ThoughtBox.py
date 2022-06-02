@@ -249,7 +249,7 @@ class ThoughtBoxTests(unittest.TestCase):
         thoughts = self.tb.listThoughts()
         thought_strs = [(str(t.name), t.title) for t in thoughts]
 
-        # The thought is deleted
+        # The thought is renamed
         self.assertEqual(
             thought_strs,
             [("1", "first"), ("3", "third"), ("4", "forth"), ("5", "second")],
@@ -261,11 +261,11 @@ class ThoughtBoxTests(unittest.TestCase):
         # Links out are preserved
         self.assertEqual(thought_strs, [("3", "third"), ("5", "second")])
 
-        # Links in are updated
+        # Links in are manintaned
         thoughts = self.tb.listThoughts(names=[Name.fromStr("1")])
         links = [str(l.target) for l in thoughts[0].links]
         self.assertIn("3", links)
-        self.assertIn("5", links)
+        self.assertIn("2", links)
 
         # Unused tags are deleted
         tags = self.tb.listTags()

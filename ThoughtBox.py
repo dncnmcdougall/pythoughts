@@ -230,7 +230,9 @@ class ThoughtBox:
 
     def rename(self, name: Name, new_name: Name) -> None:
         """Changes the name of a thought.
-        This updates the links.
+        This updates the links out of the thought.
+        Links into the thought are keps as it. This results in broken links.
+        (Links need to be updated by updating each thought that links to this thought.)
         The thought should have the same title and tags.
         """
 
@@ -243,9 +245,6 @@ class ThoughtBox:
         )
         cur.execute(
             f"UPDATE tag_links SET thought='{str_new_name}' WHERE thought='{str_name}'"
-        )
-        cur.execute(
-            f"UPDATE links SET target='{str_new_name}' WHERE target='{str_name}'"
         )
         cur.execute(
             f"UPDATE links SET source='{str_new_name}' WHERE source='{str_name}'"
