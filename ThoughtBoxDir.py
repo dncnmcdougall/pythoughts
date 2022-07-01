@@ -11,15 +11,15 @@ class ThoughtBoxDir:
     """
 
     def __init__(self, thought_dir: PathLike):
-        raise NotImplementedError()
+        self.dir = thought_dir
 
     def getName(self, path: PathLike) -> Name:
         """ Converts a path into a thought name. """
-        raise NotImplementedError()
+        return Name.fromStr(os.path.splitext(os.path.basename(path))[0])
 
     def getPath(self, name: Name) -> PathLike:
         """ Converts a thought name into a path pointing into this directory. """
-        raise NotImplementedError()
+        return os.path.join(self.dir, str(name)+'.tb')
 
     def createNew(self, name: Name, force_override=False) -> None:
         """ 
