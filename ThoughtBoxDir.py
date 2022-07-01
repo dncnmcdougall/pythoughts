@@ -1,3 +1,7 @@
+import os
+import shutil
+import pathlib
+
 from os import PathLike
 
 from .ThoughtBox import ThoughtBox
@@ -14,15 +18,15 @@ class ThoughtBoxDir:
         self.dir = thought_dir
 
     def getName(self, path: PathLike) -> Name:
-        """ Converts a path into a thought name. """
+        """Converts a path into a thought name."""
         return Name.fromStr(os.path.splitext(os.path.basename(path))[0])
 
     def getPath(self, name: Name) -> PathLike:
-        """ Converts a thought name into a path pointing into this directory. """
-        return os.path.join(self.dir, str(name)+'.tb')
+        """Converts a thought name into a path pointing into this directory."""
+        return pathlib.Path(os.path.join(self.dir, str(name) + ".tb"))
 
-    def createNew(self, name: Name, force_override=False) -> None:
-        """ 
+    def createNew(self, name: Name, force_override=False) -> Name:
+        """
         Creates a new empty thought.
 
         If force_override==True:
@@ -37,15 +41,40 @@ class ThoughtBoxDir:
         name:           The name or parent name of the thought.
         force_override: Force the name of the new thought to be name, even if it already exisits.
 
+        Returns:
+        the name of the created thought.
+
         """
-        raise NotImplementedError()
+        current_name = name
+        if not force_override:
+            while os.path.exists(self.getPath(current_name)):
+                current_name = current_name.next()
+
+        with open(self.getPath(current_name), "w") as tf:
+            tf.write("# <+title+>\n")
+            tf.write("\n")
+            tf.write("# sources\n")
+            tf.write("\n")
+            tf.write("# tags\n")
+        return current_name
 
     def read(self, name: Name) -> Thought:
-        """ Read and parse the thought file in this directory. """
-        raise NotImplementedError()
+        """Read and parse the thought file in this directory."""
+        lines = []
+        with open(self.getPath(name), "r") as thought_file:
+            lines = [l.strip() for l in thought_file.readlines()]
 
-    def writeDotGraph(self, box: ThoughtBox, file: PathLike, use_links=True, link_tags=False, show_tags=True) -> None:
-        """ Write out a graph of the links between thoughts.
+        return Thought.parse(lines, name)
+
+    def writeDotGraph(
+        self,
+        box: ThoughtBox,
+        file: PathLike,
+        use_links=True,
+        link_tags=False,
+        show_tags=True,
+    ) -> None:
+        """Write out a graph of the links between thoughts.
 
         Arguments:
         box:        The database to read information out of.
@@ -57,9 +86,13 @@ class ThoughtBoxDir:
         raise NotImplementedError()
 
     def rename(self, src: Name, to: Name) -> None:
-        """ Rename the specified thought on disk. """
-        raise NotImplementedError()
+        """Rename the specified thought on disk."""
+        src_path = self.getPath(src)
+        to_path = self.getPath(to)
+        if os.path.exists(src_path) and os.path.exists(to_path):
+            raise FileExistsError()
+        shutil.move(src_path, to_path)
 
     def delete(self, name: Name) -> None:
-        """ Delete the specified thought off disk. """
-        raise NotImplementedError()
+        """Delete the specified thought off disk."""
+        os.remove(self.getPath(name))

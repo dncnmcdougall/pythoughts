@@ -203,7 +203,6 @@ class ThoughtBox:
                 cur.execute(f"INSERT INTO tag_links (thought, tag) VALUES {tagValues}")
         self.conn.commit()
 
-
     def delete(self, name: Name):
         """
         Deletes the named thought.
@@ -228,12 +227,14 @@ class ThoughtBox:
 
         self.conn.commit()
 
-    def rename(self, name: Name, new_name: Name) -> None:
+    def rename(self, name: Name, new_name: Name) -> List[Name]:
         """Changes the name of a thought.
-        This updates the links out of the thought.
-        Links into the thought are keps as it. This results in broken links.
+        This updates the links out of the thought (the link src is updated).
+        Links into the thought are kept as is. This results in broken links (the links to points to the old files).
         (Links need to be updated by updating each thought that links to this thought.)
         The thought should have the same title and tags.
+
+        Returns a list of all the thoughts that pointed to this thought. These all need to be updated.
         """
 
         str_name = str(name)
@@ -250,3 +251,5 @@ class ThoughtBox:
             f"UPDATE links SET source='{str_new_name}' WHERE source='{str_name}'"
         )
         self.conn.commit()
+
+        return [ t.name for t in self.listThoughts(linked_to=[name])]
