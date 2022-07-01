@@ -1,4 +1,5 @@
 import argparse
+import logger
 
 from .ThoughtBoxDir import ThoughtBoxDir
 from .Name import Name
@@ -7,7 +8,7 @@ from .Thought import Thought
 from .ThoughtBox import ThoughtBox
 
 
-def parse():
+def parse(sys_args=None):
     main_parser = argparse.ArgumentParser(
         prog="pythoughts",
         description="Tools for managing a thoughtbox database and files.",
@@ -23,7 +24,7 @@ def parse():
     parser = subparsers.add_parser("help", help="show help for the commands.")
     parser.add_argument("help", nargs="?", choices=[p.prog.split()[1] for p in parsers])
 
-    args = main_parser.parse_args()
+    args = main_parser.parse_args(args=sys_args)
 
     if args.command == "help":
         for p in parsers:
@@ -39,7 +40,19 @@ def parse():
 
 
 class Create:
-    """Create new thought files on disk."""
+    """Create new thought files on disk. 
+
+    Onsuccess the file will constain the new thought and this will print out the resulting name as:
+    "Created: name"
+
+    If --overwite is used then this will always use the provided name, even if it already exists (overwriting the content.)
+    Normally (without --overwrite) the next avalable sub-name will be used.
+    For example if thought 1,2,4 exist and:
+    name is "" then 3 will be created,
+    name is "1" then 1a will be created,
+    name is "1" and --overwrite, then "1" will be overwritten,
+    name is "" and  --overwrite then "1" will be overwritten.
+    """
 
     @staticmethod
     def parser(subparsers):
@@ -58,6 +71,11 @@ class Create:
             required=True,
             help="The name of the ThoughtBox directory to use.",
         )
+        parser.add_argument(
+            "--overwrite",
+            action="store_true",
+            help="If true this command will overwrite the named thought (if it exists). Normally the next available sub-name will be used.",
+        )
         return parser
 
     def __init__(self, args):
@@ -65,8 +83,11 @@ class Create:
 
     def run(self):
         tbd = ThoughtBoxDir(self.args.box)
+        if len(self.args.name.strip()) == 0:
+            self.args.name = "1"
         name = Name.fromStr(self.args.name)
-        tbd.createNew(name)
+        new_name = tbd.createNew(name)
+        logger.log(f"Created: {new_name}")
 
 
 class Read:
@@ -82,10 +103,28 @@ class Read:
             nargs=1,
             required=True,
             action="store",
-            choices=["name", "tag"],
+            choices=["name", "tag", "details"],
             help=(
-                "Display the toughts either as a list (--by=name) or grouped by tags"
-                " (--by=tag)."
+                "Display the toughts as: "
+                " a list (--by=name),"
+                " grouped by tags (--by=tag), "
+                " with details (--by=detail)."
+                ""
+                "--by=name uses:"
+                " name1: title1"
+                " name2: title2"
+                ""
+                "--by=tag uses:"
+                " tag1: name1, name2"
+                " tag2: name1, name3"
+                ""
+                "--by=detail uses:"
+                " name1: title1"
+                " tags: tag1, tag2"
+                " links: link1, link2"
+                " name2: title2"
+                " tags: tag1, tag3"
+                " links: link2, link3"
             ),
         )
         parser.add_argument(
@@ -137,14 +176,20 @@ class Read:
         links = [Name.fromStr(l[0]) for l in self.args.links]
         tags = [Name.fromStr(t[0]) for t in self.args.tags]
         if self.args.by == "tag":
-            tb.listThoughtsByTag(names=names, tags=tags, linked_to=links)
-            # TODO: print
-            raise NotImplementedError()
+            result = tb.listThoughtsByTag(names=names, tags=tags, linked_to=links)
+            for tag in result:
+                names = [t.name for t in result[tag]]
+                logger.log(f"{tag}: {', '.join(names)}")
         else:
-            tb.listThoughts(names=names, tags=tags, linked_to=links)
-            # TODO: print
-            raise NotImplementedError()
-
+            result = tb.listThoughts(names=names, tags=tags, linked_to=links)
+            details = self.args.by == "detail":
+            for thought in result:
+                logger.log(f"{thought.name}: {thought.title}")
+                if detail:
+                    tags = [ t.title for t in thought.links ]
+                    links = [ l.target for l in thought.links ]
+                    logger.log(f"tags: {", ".join(tags)}")
+                    logger.log(f"links: {", ".join(links)}")
 
 class Write:
     """Write and update thoughts in the database."""
@@ -165,7 +210,7 @@ class Write:
             "--tag",
             nargs=1,
             action="append",
-            help="Adds a tag to the thought. Ignored if --create is presnet.",
+            help="Adds a tag to the thought.",
         )
         parser.add_argument(
             "-l",
@@ -173,7 +218,7 @@ class Write:
             nargs=1,
             action="append",
             help=(
-                "Adds an outward link to this thought. Ignored is --create is presnet."
+                "Adds an outward link to this thought."
             ),
         )
         parser.add_argument(
@@ -190,7 +235,6 @@ class Write:
         self.args = args
 
     def run(self):
-        print(self.args)
         name = Name.fromStr(self.args.name)
         links = [Link(name, Name.fromStr(l[0])) for l in self.args.links]
         tags = [Name.fromStr(t[0]) for t in self.args.tags]
@@ -294,9 +338,12 @@ class Rename:
         src = Name.fromStr(self.args["from"])
         to = Name.fromStr(self.args.to)
 
-        tb = ThoughtBox(self.args.database)
-        tb.rename(src, to)
         tbd.rename(src, to)
+        tb = ThoughtBox(self.args.database)
+        needs_updating = tb.rename(src, to)
+        logger.info(f"Successfully renamed {src} to {to}.")
+        logger.info(f"The following thoughts need updating:")
+        logger.info(f"{', '.join(needs_updating)}")
 
 
 class Delete:
@@ -336,9 +383,10 @@ class Delete:
         tbd = ThoughtBoxDir(self.args.box)
         name = Name.fromStr(self.args.name)
 
+        tbd.delete(name)
         tb = ThoughtBox(self.args.database)
         tb.delete(name)
-        tbd.delete(name)
+        logger.info(f"Successfully deleted {name}.")
 
 
 if __name__ == "__main__":
