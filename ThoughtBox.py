@@ -252,4 +252,4 @@ class ThoughtBox:
         )
         self.conn.commit()
 
-        return [ t.name for t in self.listThoughts(linked_to=[name])]
+        return [t.name for t in self.listThoughts(linked_to=[str_name])]

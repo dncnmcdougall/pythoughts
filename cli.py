@@ -1,5 +1,6 @@
 import argparse
-import logger
+import logging
+import sys
 
 from .ThoughtBoxDir import ThoughtBoxDir
 from .Name import Name
@@ -30,9 +31,9 @@ def parse(sys_args=None):
         for p in parsers:
             if p.prog.split()[1] == args.help:
                 p.print_help()
-                exit(0)
+                sys.exit(0)
         main_parser.print_help()
-        exit(0)
+        sys.exit(0)
 
     for cmd in cmds:
         if cmd.__name__.lower() == args.command:
@@ -40,18 +41,18 @@ def parse(sys_args=None):
 
 
 class Create:
-    """Create new thought files on disk. 
+    """Create new thought files on disk.
 
     Onsuccess the file will constain the new thought and this will print out the resulting name as:
     "Created: name"
 
-    If --overwite is used then this will always use the provided name, even if it already exists (overwriting the content.)
-    Normally (without --overwrite) the next avalable sub-name will be used.
+    If --override is used then this will always use the provided name, even if it already exists (overwriting the content.)
+    Normally (without --override) the next avalable sub-name will be used.
     For example if thought 1,2,4 exist and:
     name is "" then 3 will be created,
     name is "1" then 1a will be created,
-    name is "1" and --overwrite, then "1" will be overwritten,
-    name is "" and  --overwrite then "1" will be overwritten.
+    name is "1" and --override, then "1" will be overwritten,
+    name is "" and  --override then "1" will be overwritten.
     """
 
     @staticmethod
@@ -72,7 +73,7 @@ class Create:
             help="The name of the ThoughtBox directory to use.",
         )
         parser.add_argument(
-            "--overwrite",
+            "--override",
             action="store_true",
             help="If true this command will overwrite the named thought (if it exists). Normally the next available sub-name will be used.",
         )
@@ -86,8 +87,8 @@ class Create:
         if len(self.args.name.strip()) == 0:
             self.args.name = "1"
         name = Name.fromStr(self.args.name)
-        new_name = tbd.createNew(name)
-        logger.log(f"Created: {new_name}")
+        new_name = tbd.createNew(name, force_override=self.args.overwrite)
+        logging.info(f"Created: {new_name}")
 
 
 class Read:
@@ -179,17 +180,18 @@ class Read:
             result = tb.listThoughtsByTag(names=names, tags=tags, linked_to=links)
             for tag in result:
                 names = [t.name for t in result[tag]]
-                logger.log(f"{tag}: {', '.join(names)}")
+                logging.info(f"{tag}: {', '.join(names)}")
         else:
             result = tb.listThoughts(names=names, tags=tags, linked_to=links)
-            details = self.args.by == "detail":
+            detail = self.args.by == "detail"
             for thought in result:
-                logger.log(f"{thought.name}: {thought.title}")
+                logging.info(f"{thought.name}: {thought.title}")
                 if detail:
-                    tags = [ t.title for t in thought.links ]
-                    links = [ l.target for l in thought.links ]
-                    logger.log(f"tags: {", ".join(tags)}")
-                    logger.log(f"links: {", ".join(links)}")
+                    tags = [t.title for t in thought.links]
+                    links = [l.target for l in thought.links]
+                    logging.info(f"tags: {', '.join(tags)}")
+                    logging.info(f"links: {', '.join(links)}")
+
 
 class Write:
     """Write and update thoughts in the database."""
@@ -217,9 +219,7 @@ class Write:
             "--link",
             nargs=1,
             action="append",
-            help=(
-                "Adds an outward link to this thought."
-            ),
+            help=("Adds an outward link to this thought."),
         )
         parser.add_argument(
             "-d",
@@ -240,7 +240,9 @@ class Write:
         tags = [Name.fromStr(t[0]) for t in self.args.tags]
         title = " ".join(self.args.title)
 
-        t = Thought(name=name, title=title, tags=tags, links=links)
+        t = Thought(
+            name=name, title=title, tags=tags, links=links, content=[], sources=[]
+        )
         tb = ThoughtBox(self.args.database)
         tb.addOrUpdate(t)
 
@@ -341,9 +343,9 @@ class Rename:
         tbd.rename(src, to)
         tb = ThoughtBox(self.args.database)
         needs_updating = tb.rename(src, to)
-        logger.info(f"Successfully renamed {src} to {to}.")
-        logger.info(f"The following thoughts need updating:")
-        logger.info(f"{', '.join(needs_updating)}")
+        logging.info(f"Successfully renamed {src} to {to}.")
+        logging.info(f"The following thoughts need updating:")
+        logging.info(f"{', '.join(needs_updating)}")
 
 
 class Delete:
@@ -386,7 +388,7 @@ class Delete:
         tbd.delete(name)
         tb = ThoughtBox(self.args.database)
         tb.delete(name)
-        logger.info(f"Successfully deleted {name}.")
+        logging.info(f"Successfully deleted {name}.")
 
 
 if __name__ == "__main__":

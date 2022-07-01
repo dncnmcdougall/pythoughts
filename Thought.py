@@ -1,4 +1,5 @@
 import re
+import logging
 
 from dataclasses import dataclass
 
@@ -44,13 +45,13 @@ class Thought:
                 result[heading].append(line)
             else:
                 if print_warnings:
-                    print(
-                        "Warning: did not understand heading %s in %s. Ignoring."
+                    logging.warning(
+                        "Did not understand heading %s in %s. Ignoring."
                         % (heading, name)
                     )
 
         tags = []
-        tag_re = re.compile("#\w*")
+        tag_re = re.compile(r"#\w*")
 
         for line in result["content"]:
             matches = tag_re.finditer(line)
@@ -70,7 +71,7 @@ class Thought:
                 tags.extend([tag.strip() for tag in line.split(",")])
 
         links = []
-        link_re = re.compile("\[\[.*?\]\]")
+        link_re = re.compile(r"\[\[.*?\]\]")
 
         for line in result["content"]:
             matches = link_re.finditer(line)

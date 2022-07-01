@@ -247,7 +247,7 @@ class ThoughtBoxTests(unittest.TestCase):
         needs_updating = self.tb.rename(Name.fromStr("2"), Name.fromStr("5"))
 
         # list all the thoughts that linked to this thought.
-        self.assertEqual(needs_updating, ['1'])
+        self.assertEqual(needs_updating, ["1"])
         thoughts = self.tb.listThoughts(linked_to=[Name.fromStr(n) for n in ["2"]])
         thought_strs = [(str(t.name), t.title) for t in thoughts]
         self.assertEqual(thought_strs, [("1", "first")])
