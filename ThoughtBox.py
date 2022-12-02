@@ -123,7 +123,7 @@ class ThoughtBox:
                 )
             )
 
-        return sorted(thoughts)
+        return sorted(thoughts, key=lambda t: t.name)
 
     def listThoughtsByTag(
         self,

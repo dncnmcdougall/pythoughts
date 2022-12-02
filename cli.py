@@ -5,6 +5,7 @@ import sys
 from .ThoughtBoxDir import ThoughtBoxDir
 from .Name import Name
 from .Link import Link
+from .Tag import Tag
 from .Thought import Thought
 from .ThoughtBox import ThoughtBox
 
@@ -61,7 +62,11 @@ class Create:
             "create", help=Create.__doc__, description=Create.__doc__
         )
         parser.add_argument(
-            "name", nargs=1, action="store", help="The name of the thought to create."
+            "name", 
+            nargs='?', 
+            action="store", 
+            default="1", 
+            help="The name of the thought to create."
         )
         parser.add_argument(
             "-b",
@@ -73,6 +78,7 @@ class Create:
             help="The name of the ThoughtBox directory to use.",
         )
         parser.add_argument(
+            "--overwrite",
             "--override",
             action="store_true",
             help="If true this command will overwrite the named thought (if it exists). Normally the next available sub-name will be used.",
@@ -83,10 +89,11 @@ class Create:
         self.args = args
 
     def run(self):
-        tbd = ThoughtBoxDir(self.args.box)
-        if len(self.args.name.strip()) == 0:
-            self.args.name = "1"
-        name = Name.fromStr(self.args.name)
+        tbd = ThoughtBoxDir(self.args.box[0])
+        arg_name = self.args.name[0].strip()
+        if len(arg_name) == 0:
+            arg_name = "1"
+        name = Name.fromStr(arg_name)
         new_name = tbd.createNew(name, force_override=self.args.overwrite)
         logging.info(f"Created: {new_name}")
 
@@ -104,7 +111,7 @@ class Read:
             nargs=1,
             required=True,
             action="store",
-            choices=["name", "tag", "details"],
+            choices=["name", "tag", "detail"],
             help=(
                 "Display the toughts as: "
                 " a list (--by=name),"
@@ -154,7 +161,7 @@ class Read:
             nargs="+",
             action="store",
             help=(
-                "Display the thoughts which link to the given links. If no link is"
+                "Display the thoughts which link to the given thought. If no link is"
                 " given, display all the thoughts."
             ),
         )
@@ -172,25 +179,26 @@ class Read:
         self.args = args
 
     def run(self):
-        tb = ThoughtBox(self.args.database)
-        names = [Name.fromStr(n[0]) for n in self.args.names]
-        links = [Name.fromStr(l[0]) for l in self.args.links]
-        tags = [Name.fromStr(t[0]) for t in self.args.tags]
-        if self.args.by == "tag":
+        tb = ThoughtBox(self.args.database[0])
+        names = [Name.fromStr(n) for n in self.args.names or []]
+        links = [Name.fromStr(l) for l in self.args.links or []]
+        tags = [Tag.fromStr(t) for t in self.args.tags or []]
+        if self.args.by[0] == "tag":
             result = tb.listThoughtsByTag(names=names, tags=tags, linked_to=links)
-            for tag in result:
+            res_tags = sorted(result.keys(),  key=lambda t: t.title)
+            for tag in res_tags:
                 names = [t.name for t in result[tag]]
-                logging.info(f"{tag}: {', '.join(names)}")
+                logging.info(f"{tag.title}: {', '.join(names)}")
         else:
             result = tb.listThoughts(names=names, tags=tags, linked_to=links)
-            detail = self.args.by == "detail"
+            detail = self.args.by[0] == "detail"
             for thought in result:
                 logging.info(f"{thought.name}: {thought.title}")
                 if detail:
-                    tags = [t.title for t in thought.links]
-                    links = [l.target for l in thought.links]
-                    logging.info(f"tags: {', '.join(tags)}")
-                    logging.info(f"links: {', '.join(links)}")
+                    str_tags = sorted([t.title for t in thought.tags])
+                    str_links = sorted([l.target for l in thought.links])
+                    logging.info(f"tags: {', '.join(str_tags)}")
+                    logging.info(f"links: {', '.join(str_links)}")
 
 
 class Write:
