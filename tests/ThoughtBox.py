@@ -10,6 +10,7 @@ from ..Tag import Tag
 from ..Link import Link
 
 
+
 class ThoughtBoxTests(unittest.TestCase):
     def _addThought(
         self, name: str, title: str, tags: List[str], links: List[str]
@@ -194,6 +195,63 @@ class ThoughtBoxTests(unittest.TestCase):
 
         self.assertEqual(thought_strs, [("1", "first"), ("3", "new title")])
 
+    def test_addOrUpdate_no_links(self):
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+        )
+
+        new_third = self._addThought(
+            name="3", title="new title", tags=["dog", "mouse", "new_tag"], links=[]
+        )
+
+        thoughts = self.tb.listThoughts(names=[Name.fromStr("3")])
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(thought_strs, [("3", "new title")])
+
+        tags = self.tb.listTags()
+        tag_strs = [t.title for t in tags]
+
+        self.assertIn("new_tag", tag_strs)
+
+        thoughts = self.tb.listThoughts(linked_to=[Name.fromStr("2")])
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(thought_strs, [("1", "first") ])
+
+
+    def test_addOrUpdate_no_tags(self):
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+        )
+        before_tag_strs = [t.title for t in self.tb.listTags()]
+
+        new_third = self._addThought(
+            name="3", title="new title", tags=[], links=["2"]
+        )
+
+        thoughts = self.tb.listThoughts(names=[Name.fromStr("3")])
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(thought_strs, [("3", "new title")])
+
+        tag_strs = [t.title for t in self.tb.listTags()]
+
+        self.assertEqual(before_tag_strs, tag_strs)
+
+        thoughts = self.tb.listThoughts(linked_to=[Name.fromStr("2")])
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(thought_strs, [("1", "first"), ("3", "new title")])
+
     def test_delete(self):
         thoughts = self.tb.listThoughts()
         thought_strs = [(str(t.name), t.title) for t in thoughts]
@@ -344,4 +402,32 @@ class ThoughtBox_PersistenceTests(unittest.TestCase):
         self.assertEqual(
             thought_strs,
             [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+        )
+
+    def test_listThoughts_without_tags(self):
+        tb = ThoughtBox(self.db_file.name)
+
+        self.fifth = self._addThought(
+            tb, name="5", title="tagless", tags=[], links=["2"]
+        )
+        thoughts = tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ("5","tagless")],
+        )
+
+    def test_listThoughts_without_links(self):
+        tb = ThoughtBox(self.db_file.name)
+
+        self.fifth = self._addThought(
+            tb, name="5", title="linkless", tags=["tag"], links=[]
+        )
+        thoughts = tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ("5","linkless")],
         )

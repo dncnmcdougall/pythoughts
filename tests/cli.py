@@ -264,3 +264,54 @@ class CliTests(unittest.TestCase):
                          'INFO:root:3: third'
                          ])
 
+    def test_write_full(self):
+        self._createFourThoughts()
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+        )
+
+        args = ['write','5','fifth', '--tag','first','--tag','dog','--link','1','--link','2', '--database',self.db_file.name]
+        with self.assertNoLogs(level='INFO') as logs:
+            parse(args)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ('5','fifth')],
+        )
+
+    def test_write_lean(self):
+        self._createFourThoughts()
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+        )
+
+        args = ['write','5','fifth', '--database',self.db_file.name]
+        with self.assertNoLogs(level='INFO') as logs:
+            parse(args)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ('5','fifth')],
+        )
+
+    def test_parse(self):
+        self.fail("Not yet implimented.")
+
+    def test_rename(self):
+        self.fail("Not yet implimented.")
+
+    def test_delete(self):
+        self.fail("Not yet implimented.")
+

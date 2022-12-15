@@ -87,11 +87,12 @@ class ThoughtBox:
             where_str = ""
 
         query = (
-            f"SELECT tbl.number, tbl.title, group_concat(DISTINCT tags.title), group_concat(DISTINCT links.target) "
+            f"SELECT tbl.number, tbl.title, grouped_tags.tags, group_concat(DISTINCT links.target) "
             "FROM "
             f" (SELECT thoughts.number as number, thoughts.title as title FROM {', '.join(inner_tables)} {where_str}) as tbl "
             "LEFT OUTER JOIN links ON links.source=tbl.number "
-            "LEFT OUTER JOIN tags, tag_links ON tag_links.thought=tbl.number AND tag_links.tag=tags.number "
+            "LEFT OUTER JOIN (SELECT tag_links.thought as number, group_concat(DISTINCT tags.title) as tags FROM tags,tag_links WHERE tags.number = tag_links.tag GROUP BY tag_links.thought) as grouped_tags "
+            "ON grouped_tags.number=tbl.number "
             "GROUP BY tbl.number "
         )
 
@@ -106,12 +107,18 @@ class ThoughtBox:
                 print(row)
             number = Name.fromStr(row[0])
             title = Name.fromStr(row[1])
-            tag_bits = [Tag.fromStr(t.strip()) for t in row[2].split(",") if t.strip()]
-            link_bits = [
-                Link(source=number, target=l.strip())
-                for l in row[3].split(",")
-                if l.strip()
-            ]
+            if row[2] is not None:
+                tag_bits = [Tag.fromStr(t.strip()) for t in row[2].split(",") if t.strip()]
+            else:
+                tag_bits=[]
+            if row[3] is not None:
+                link_bits = [
+                    Link(source=number, target=l.strip())
+                    for l in row[3].split(",")
+                    if l.strip()
+                ]
+            else:
+                link_bits = []
             thoughts.append(
                 Thought(
                     name=row[0],
@@ -160,14 +167,13 @@ class ThoughtBox:
         cur.execute("DELETE FROM links WHERE source IS '" + str_name + "'")
         cur.execute("DELETE FROM tag_links WHERE thought IS '" + str_name + "'")
         # delete all unused tags
-        cur.execute(
+        a = cur.execute(
             "WITH tbl as "
             "(SELECT tags.number as number, tag_links.tag as tag_col FROM tags "
             "LEFT OUTER JOIN tag_links ON tags.number = tag_links.tag "
             "GROUP BY tags.number) "
             "DELETE FROM tags WHERE tags.number IN (SELECT tbl.number FROM tbl where tag_col IS NULL )"
         )
-        self.conn.commit()
 
         cur = self.conn.cursor()
         cur.execute(

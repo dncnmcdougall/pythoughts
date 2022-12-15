@@ -244,14 +244,14 @@ class Write:
 
     def run(self):
         name = Name.fromStr(self.args.name)
-        links = [Link(name, Name.fromStr(l[0])) for l in self.args.links]
-        tags = [Name.fromStr(t[0]) for t in self.args.tags]
+        links = [Link(name, Name.fromStr(l[0])) for l in self.args.link or []]
+        tags = [Tag.fromStr(t[0]) for t in self.args.tag or []]
         title = " ".join(self.args.title)
 
         t = Thought(
             name=name, title=title, tags=tags, links=links, content=[], sources=[]
         )
-        tb = ThoughtBox(self.args.database)
+        tb = ThoughtBox(self.args.database[0])
         tb.addOrUpdate(t)
 
 
