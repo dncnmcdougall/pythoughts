@@ -218,6 +218,8 @@ class ThoughtBox:
         """
         str_name = str(name)
 
+        pointed_to = [t.name for t in self.listThoughts(linked_to=[str_name])]
+
         cur = self.conn.cursor()
         cur.execute(f"DELETE FROM thoughts WHERE number IS '{str_name}'")
         cur.execute(f"DELETE FROM links WHERE source IS '{str_name}'")
@@ -232,6 +234,7 @@ class ThoughtBox:
         )
 
         self.conn.commit()
+        return pointed_to
 
     def rename(self, name: Name, new_name: Name) -> List[Name]:
         """Changes the name of a thought.

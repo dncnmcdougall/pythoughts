@@ -91,8 +91,6 @@ class Create:
     def run(self):
         tbd = ThoughtBoxDir(self.args.box[0])
         arg_name = self.args.name[0].strip()
-        if len(arg_name) == 0:
-            arg_name = "1"
         name = Name.fromStr(arg_name)
         new_name = tbd.createNew(name, force_override=self.args.overwrite)
         logging.info(f"Created: {new_name}")
@@ -344,12 +342,20 @@ class Rename:
         self.args = args
 
     def run(self):
-        tbd = ThoughtBoxDir(self.args.box)
-        src = Name.fromStr(self.args["from"])
-        to = Name.fromStr(self.args.to)
+        dargs = vars(self.args)
+        tbd = ThoughtBoxDir(dargs["box"][0])
+        src = Name.fromStr(dargs['from'][0])
+        to = Name.fromStr(dargs["to"][0])
 
-        tbd.rename(src, to)
-        tb = ThoughtBox(self.args.database)
+        try:
+            tbd.rename(src, to)
+        except FileNotFoundError:
+            logging.error(f'Failed to rename {str(src)}, file not found.')
+            return
+        except FileExistsError:
+            logging.error(f'Failed to rename {str(src)} to {str(to)}, file already exists.')
+            return
+        tb = ThoughtBox(dargs["database"][0])
         needs_updating = tb.rename(src, to)
         logging.info(f"Successfully renamed {src} to {to}.")
         logging.info(f"The following thoughts need updating:")
@@ -390,13 +396,26 @@ class Delete:
         self.args = args
 
     def run(self):
-        tbd = ThoughtBoxDir(self.args.box)
+        tbd = ThoughtBoxDir(self.args.box[0])
         name = Name.fromStr(self.args.name)
 
-        tbd.delete(name)
-        tb = ThoughtBox(self.args.database)
-        tb.delete(name)
-        logging.info(f"Successfully deleted {name}.")
+        file_error = False
+
+        try:
+            tbd.delete(name)
+        except FileNotFoundError:
+            file_error=True
+
+        tb = ThoughtBox(self.args.database[0])
+        pointed_to = tb.delete(name)
+
+        if file_error:
+            logging.info(f'Deleted {name} with warnings: File not found.')
+        else:
+            logging.info(f"Successfully deleted {name}.")
+        if len(pointed_to) > 0:
+            logging.info(f"The following thoughts pointed at it:")
+            logging.info(f"{', '.join(pointed_to)}")
 
 
 if __name__ == "__main__":

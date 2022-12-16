@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 import os
+import shutil
 
 from typing import List, Dict
 
@@ -135,7 +136,6 @@ class CliTests(unittest.TestCase):
             os.listdir(self.dir_name),
         )
 
-
     def test_create_override(self):
         name_1 = Name.fromStr("1")
         name_1n = name_1.next()
@@ -167,7 +167,6 @@ class CliTests(unittest.TestCase):
             os.path.relpath(self.tbd.getPath(name_1n), start=self.dir_name),
             os.listdir(self.dir_name),
         )
-
 
     def test_read(self):
         self._createFourThoughts()
@@ -329,10 +328,205 @@ class CliTests(unittest.TestCase):
 
         test_db_file.close()
 
-
     def test_rename(self):
-        self.fail("Not yet implimented.")
+        self._createFourThoughts()
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
 
-    def test_delete(self):
-        self.fail("Not yet implimented.")
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
 
+
+        name_2 = Name.fromStr("2")
+        name_5 = Name.fromStr("5")
+        dir_list = os.listdir(self.dir_name)
+        self.assertIn(
+            os.path.relpath(self.tbd.getPath(name_2), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+
+        args = ['rename','--from',str(name_2),'--to',str(name_5),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [
+                             f'INFO:root:Successfully renamed {str(name_2)} to {str(name_5)}.',
+                             f'INFO:root:The following thoughts need updating:',
+                             f'INFO:root:1',
+                         ])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("3", "third"), ("4", "fourth"), ("5","second")],
+        )
+
+        dir_list = os.listdir(self.dir_name)
+        self.assertNotIn(
+            os.path.relpath(self.tbd.getPath(name_2), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+        self.assertIn(
+            os.path.relpath(self.tbd.getPath(name_5), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+
+    def test_rename_file_not_found(self):
+        self._createFourThoughts()
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+
+        name_6 = Name.fromStr("6")
+        name_5 = Name.fromStr("5")
+        dir_list = os.listdir(self.dir_name)
+        self.assertNotIn(
+            os.path.relpath(self.tbd.getPath(name_6), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+
+        args = ['rename','--from',str(name_6),'--to',str(name_5),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [
+                             f'ERROR:root:Failed to rename {str(name_6)}, file not found.',
+                         ])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+    def test_rename_file_exists(self):
+        self._createFourThoughts()
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+
+        name_2 = Name.fromStr("2")
+        name_3 = Name.fromStr("3")
+        dir_list = os.listdir(self.dir_name)
+
+        args = ['rename','--from',str(name_2),'--to',str(name_3),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [
+                             f'ERROR:root:Failed to rename {str(name_2)} to {str(name_3)}, file already exists.',
+                         ])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+        dir_list_after = os.listdir(self.dir_name)
+        self.assertEqual(dir_list,dir_list_after)
+
+    def test_delete_success(self):
+        self._createFourThoughts()
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+
+        name_2 = Name.fromStr("2")
+        dir_list = os.listdir(self.dir_name)
+        self.assertIn(
+            os.path.relpath(self.tbd.getPath(name_2), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+
+        args = ['delete',str(name_2),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [
+                             f'INFO:root:Successfully deleted {str(name_2)}.',
+                             f'INFO:root:The following thoughts pointed at it:',
+                             f'INFO:root:1',
+                         ])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("3", "third"), ("4", "fourth")],
+        )
+
+        dir_list = os.listdir(self.dir_name)
+        self.assertNotIn(
+            os.path.relpath(self.tbd.getPath(name_2), start=self.dir_name),
+            os.listdir(self.dir_name),
+        )
+
+    def test_delete_no_file(self):
+        self._createFourThoughts()
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+        name_6 = Name.fromStr("6")
+
+        args = ['delete',str(name_6),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [f'INFO:root:Deleted {str(name_6)} with warnings: File not found.'])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
+        )
+
+    def test_delete_not_in_db(self):
+        shutil.copytree(self.files_path, self.dir.name, dirs_exist_ok=True)
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [],
+        )
+
+        name_2 = Name.fromStr("2")
+
+        args = ['delete',str(name_2),'--database',self.db_file.name, '--directory',self.dir.name]
+        with self.assertLogs(level='INFO') as logs:
+            parse(args)
+        self.assertEqual(logs.output, [f'INFO:root:Successfully deleted {str(name_2)}.'])
+
+        thoughts = self.tb.listThoughts()
+        thought_strs = [(str(t.name), t.title) for t in thoughts]
+        self.assertEqual(
+            thought_strs,
+            [],
+        )
