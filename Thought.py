@@ -68,7 +68,9 @@ class Thought:
         for line in result["tags"]:
             if len(line) > 0:
                 line = line.strip(" ,")
-                tags.extend([tag.strip() for tag in line.split(",")])
+                tags.extend([t[1:] if t[0] == '#' else t for t in 
+                                [tag.strip() for tag in line.split(",")]
+                            ])
 
         links = []
         link_re = re.compile(r"\[\[.*?\]\]")
@@ -84,6 +86,9 @@ class Thought:
             for m in matches:
                 link = m.group()[2:-2]
                 links.append(link)
+
+        tags.sort()
+        links.sort()
 
         return Thought(
             name=name,

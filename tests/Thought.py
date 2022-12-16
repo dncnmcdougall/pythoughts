@@ -18,10 +18,10 @@ class ThoughtTests(unittest.TestCase):
         The first heading is the title of the thought.
 
         Inline links are specified with /[[\(.\{-}\)]]/ which links to /\1/.
-        Inline tags are /#\(.\{-}\)\s/ with the tag being /\1/.
+        Inline tags are /#\(\w\{-}\)\s/ with the tag being /\1/.
 
         There is also the special heading # tags. The content of this section is split on ","
-        and each non-empty group is treated as a tag. This allows tags with spaces.
+        and each non-empty group is treated as a tag. Each tag has leading #'s removed. This allows tags with spaces.
 
         Three is also the special heading #sources. The content of this is also
         parsed for tags and links, but is not included in content.
@@ -31,7 +31,7 @@ class ThoughtTests(unittest.TestCase):
 
         heading_content = ["# heading", "content 1", "content 2", ""]
 
-        inline_tags = ["The #cat jumped", "#dog jumped too", "as did the #kangaroo", ""]
+        inline_tags = ["The #cat jumped", "#dog jumped too", "as did the #kangaroo", " a tag followed bu a #comma,",""]
 
         inline_links = [
             "The cat [[1]] jumped",
@@ -40,7 +40,7 @@ class ThoughtTests(unittest.TestCase):
             "",
         ]
 
-        tags_content = ["# tags", "tag1, tag1b", "tag 2, tag 2b,", "tag 3, tag 3b", ""]
+        tags_content = ["# tags", "#tag1, tag1b", "tag 2, tag 2b,", "tag 3, tag 3b", ""]
 
         sources_content = ["# sources", "sources 1", "sources 2", ""]
 
@@ -63,14 +63,15 @@ class ThoughtTests(unittest.TestCase):
                 "content": expected_content,
                 "tags": [
                     "cat",
+                    "comma",
                     "dog",
                     "kangaroo",
-                    "tag1",
-                    "tag1b",
                     "tag 2",
                     "tag 2b",
                     "tag 3",
                     "tag 3b",
+                    "tag1",
+                    "tag1b",
                 ],
                 "sources": ["sources 1", "sources 2", ""],
                 "links": ["1", "2", "3"],
@@ -178,7 +179,7 @@ class ThoughtTests(unittest.TestCase):
             {
                 "title": "heading",
                 "content": [],
-                "tags": ["tag1", "tag1b", "tag 2", "tag 2b", "tag 3", "tag 3b"],
+                "tags": ["tag 2", "tag 2b", "tag 3", "tag 3b", "tag1", "tag1b"],
                 "sources": [],
                 "links": [],
             },
@@ -223,12 +224,12 @@ class ThoughtTests(unittest.TestCase):
                     "cat",
                     "dog",
                     "kangaroo",
-                    "tag1",
-                    "tag1b",
                     "tag 2",
                     "tag 2b",
                     "tag 3",
                     "tag 3b",
+                    "tag1",
+                    "tag1b",
                 ],
                 "sources": [],
                 "links": [],

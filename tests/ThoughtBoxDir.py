@@ -151,8 +151,8 @@ class ThoughtBoxDirTests(unittest.TestCase):
                 "content": content,
                 "tags": [
                     "inline_tag",
-                    "tag1",
                     "tag 2",
+                    "tag1",
                 ],
                 "sources": ["sources 1"],
                 "links": ["1a1"],

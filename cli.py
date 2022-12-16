@@ -289,11 +289,11 @@ class Parse:
         self.args = args
 
     def run(self):
-        tbd = ThoughtBoxDir(self.args.box)
+        tbd = ThoughtBoxDir(self.args.box[0])
         name = Name.fromStr(self.args.name)
         thought = tbd.read(name)
 
-        tb = ThoughtBox(self.args.database)
+        tb = ThoughtBox(self.args.database[0])
         tb.addOrUpdate(thought)
 
 

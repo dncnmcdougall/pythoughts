@@ -10,7 +10,6 @@ from ..Tag import Tag
 from ..Link import Link
 
 
-
 class ThoughtBoxTests(unittest.TestCase):
     def _addThought(
         self, name: str, title: str, tags: List[str], links: List[str]

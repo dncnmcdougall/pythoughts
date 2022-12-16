@@ -28,7 +28,38 @@ class CliTests(unittest.TestCase):
         self.tb.addOrUpdate(t)
         return t
 
+    def _createFourThoughts(self):
+        """
+        links:
+        1 -> 2 -> 4 -> 1
+          -> 3 <>
+
+        tags:
+          first  -> 1
+          second -> 2
+          cat    -> 1,4
+          dog    -> 2,3
+          mouse  -> 3,4
+        """
+        self.first = self._addThought(
+            name="1", title="first", tags=["first", "cat"], links=["2", "3"]
+        )
+
+        self.second = self._addThought(
+            name="2", title="second", tags=["second", "dog"], links=["4"]
+        )
+
+        self.third = self._addThought(
+            name="3", title="third", tags=["dog", "mouse"], links=["4"]
+        )
+
+        self.fourth = self._addThought(
+            name="4", title="fourth", tags=["cat", "mouse"], links=["1", "3"]
+        )
+
     def setUp(self):
+        self.files_path = os.path.abspath(os.path.join(os.path.dirname(__file__),'thoughts'))
+
         self.dir = tempfile.TemporaryDirectory()
         self.dir_name = self.dir.name
         self.tbd = ThoughtBoxDir(self.dir_name)
@@ -137,34 +168,6 @@ class CliTests(unittest.TestCase):
             os.listdir(self.dir_name),
         )
 
-    def _createFourThoughts(self):
-        """
-        links:
-        1 -> 2 -> 4 -> 1
-          -> 3 <>
-
-        tags:
-          first  -> 1
-          second -> 2
-          cat    -> 1,4
-          dog    -> 2,3
-          mouse  -> 3,4
-        """
-        self.first = self._addThought(
-            name="1", title="first", tags=["first", "cat"], links=["2", "3"]
-        )
-
-        self.second = self._addThought(
-            name="2", title="second", tags=["second", "dog"], links=["4"]
-        )
-
-        self.third = self._addThought(
-            name="3", title="third", tags=["dog", "mouse"], links=["4"]
-        )
-
-        self.forth = self._addThought(
-            name="4", title="forth", tags=["cat", "mouse"], links=["1", "3"]
-        )
 
     def test_read(self):
         self._createFourThoughts()
@@ -176,7 +179,7 @@ class CliTests(unittest.TestCase):
                          'INFO:root:1: first',
                          'INFO:root:2: second',
                          'INFO:root:3: third',
-                         'INFO:root:4: forth'
+                         'INFO:root:4: fourth'
                          ])
 
     def test_read_by_tags(self):
@@ -209,7 +212,7 @@ class CliTests(unittest.TestCase):
                          'INFO:root:3: third',
                          'INFO:root:tags: dog, mouse',
                          'INFO:root:links: 4',
-                         'INFO:root:4: forth',
+                         'INFO:root:4: fourth',
                          'INFO:root:tags: cat, mouse',
                          'INFO:root:links: 1, 3'
                          ])
@@ -222,7 +225,7 @@ class CliTests(unittest.TestCase):
             parse(args)
         self.assertEqual(logs.output, [
                          'INFO:root:1: first',
-                         'INFO:root:4: forth'
+                         'INFO:root:4: fourth'
                          ])
 
         args = ['read','--by=name','--tags','cat', 'mouse','--database',self.db_file.name]
@@ -231,7 +234,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(logs.output, [
                          'INFO:root:1: first',
                          'INFO:root:3: third',
-                         'INFO:root:4: forth'
+                         'INFO:root:4: fourth'
                          ])
 
     def test_read_with_link(self):
@@ -251,7 +254,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(logs.output, [
                          'INFO:root:2: second',
                          'INFO:root:3: third',
-                         'INFO:root:4: forth'
+                         'INFO:root:4: fourth'
                          ])
 
     def test_read_with_link_and_tag(self):
@@ -271,7 +274,7 @@ class CliTests(unittest.TestCase):
         thought_strs = [(str(t.name), t.title) for t in thoughts]
         self.assertEqual(
             thought_strs,
-            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
         )
 
         args = ['write','5','fifth', '--tag','first','--tag','dog','--link','1','--link','2', '--database',self.db_file.name]
@@ -282,7 +285,7 @@ class CliTests(unittest.TestCase):
         thought_strs = [(str(t.name), t.title) for t in thoughts]
         self.assertEqual(
             thought_strs,
-            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ('5','fifth')],
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth"), ('5','fifth')],
         )
 
     def test_write_lean(self):
@@ -292,7 +295,7 @@ class CliTests(unittest.TestCase):
         thought_strs = [(str(t.name), t.title) for t in thoughts]
         self.assertEqual(
             thought_strs,
-            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth")],
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth")],
         )
 
         args = ['write','5','fifth', '--database',self.db_file.name]
@@ -303,11 +306,29 @@ class CliTests(unittest.TestCase):
         thought_strs = [(str(t.name), t.title) for t in thoughts]
         self.assertEqual(
             thought_strs,
-            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "forth"), ('5','fifth')],
+            [("1", "first"), ("2", "second"), ("3", "third"), ("4", "fourth"), ('5','fifth')],
         )
 
     def test_parse(self):
-        self.fail("Not yet implimented.")
+        self._createFourThoughts()
+
+        test_db_file = tempfile.NamedTemporaryFile()
+        test_tb = ThoughtBox(test_db_file.name, explicitly_create_tables=True)
+
+
+        for i in range(1,5):
+            args = ['parse',str(i),'--database',test_db_file.name, '--directory',self.files_path]
+            with self.assertNoLogs(level='INFO') as logs:
+                parse(args)
+
+        thoughts = self.tb.listThoughts()
+        test_thoughts = test_tb.listThoughts()
+
+        self.assertEqual(thoughts, test_thoughts)
+
+
+        test_db_file.close()
+
 
     def test_rename(self):
         self.fail("Not yet implimented.")
