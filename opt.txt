@@ -1,0 +1,16 @@
+Read
+A program to read the details of tags and memories.
+
+-t --tag	Display the tag and the memories associated with it.
+ --tags	Displays all the tags and the memories associated with them.
+-m --memory	Display the memory and its details.
+ --memories	Display all the memories.
+-d --detailed-memories	Display all details of all the memories.
+-db --database	The name of the database file to use.
+
+Write
+A program to write the details of tags and memories.
+
+-t --tag	Adds a tag to the memory.
+-l --link	Adds a link to the memory.
+-db --database	The name of the database file to use.
